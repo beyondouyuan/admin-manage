@@ -1,0 +1,21 @@
+{
+    "name": "admin-manage",
+    "version": "1.0.0",
+    "description": "react reac-router",
+    "main": "index.js",
+    "dependencies": {
+        "react": "^15.6.1",
+        "react-dom": "^15.6.1",
+        "react-router": "^3.0.2"
+    },
+    "devDependencies": {},
+    "scripts": {
+        "start": "cd server && json-server db.json -w -p 3000",
+        "dev": "roadhog server"
+    },
+    "keywords": [
+        "react"
+    ],
+    "author": "beyondouyuan",
+    "license": "ISC"
+}
