@@ -1,25 +1,47 @@
 /*
 * @Author: Irving
 * @Date:   2017-08-13 03:20:36
-* @Last Modified by:   Irving
-* @Last Modified time: 2017-08-13 05:15:45
+* @Last Modified by:   beyondouyuan
+* @Last Modified time: 2017-08-24 00:20:21
 */
 
 import React from 'react';
 import HomeLayout from '../Layouts/HomeLayout';
+import request, { get, del } from '../../utils/request'
 
 class PlayerList extends React.Component {
-
+	/**
+	 * [constructor description]
+	 * @param  {[type]} props [description]
+	 * @return {[type]}       [description]
+	 */
 	constructor(props) {
 		super(props);
 		this.state = {
 			PlayerList: []
 		}
 	}
-	// 在组件怪家前请求数据，当然也可以在组件挂载完成后再请求数据
+	// 在组件挂载前请求数据，当然也可以在组件挂载完成后再请求数据
 	componentWillMount() {
-		this.fetchData('http://localhost:3000/players');
+		/**
+		 * [description]
+		 * @param  {[type]} res [description]
+		 * @return {[type]}     [description]
+		 */
+		get('http://localhost:3000/players')
+			.then((res) => {
+				if (res) {
+					this.setState({
+						PlayerList: res
+					})
+				}
+			});
 	}
+	/**
+	 * [fetchData description]
+	 * @param  {[type]} url [description]
+	 * @return {[type]}     [description]
+	 */
 	fetchData(url) {
 		fetch(url)
 			// 将返回数据json格式化
@@ -31,15 +53,17 @@ class PlayerList extends React.Component {
 				});
 			});
 	}
-
+	/**
+	 * [handleDelete description]
+	 * @param  {[type]} player [description]
+	 * @return {[type]}        [description]
+	 */
 	handleDelete(player) {
 		// 确认对话框
 		const confirmed = confirm(`确定要删除球员 ${player.name} 吗？`);
 		if (confirmed) {
-			fetch('http://localhost:3000/players' + player.id, {
-				method: 'delete'
-			})
-			.then(res => res.json())
+			del('http://localhost:3000/players' + player.id)
+			// .then(res => res.json())
 			.then(res => {
 				this.setState({
 					PlayerList: this.state.PlayerList.filter(item => item.id !== player.id)
@@ -51,6 +75,18 @@ class PlayerList extends React.Component {
 				alert('删除失败！')
 			});
 		}
+	}
+	/**
+	 * [handleEdit description]
+	 * @param  {[type]} player [description]
+	 * @return {[type]}        [description]
+	 */
+	handleEdit(player) {
+		/**
+		 * 路由跳转到编辑页面即可
+		 */
+		this.context.router.push('/player/edit/' + player.id);
+
 	}
 
 	render() {
@@ -97,5 +133,8 @@ class PlayerList extends React.Component {
 	}
 }
 
+PlayerList.contextTypes = {
+  router: React.PropTypes.object.isRequired
+};
 
 export default PlayerList;

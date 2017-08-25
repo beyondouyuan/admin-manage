@@ -8,8 +8,12 @@
 import React from 'react';
 
 function formProvider(fields) {
+    /**
+     * [description]
+     * @param  {[type]} Component [description]
+     * @return {[type]}           [description]
+     */
     return function(Component) {
-
         const initFormState = {};
         for (const key in fields) {
             initFormState[key] = {

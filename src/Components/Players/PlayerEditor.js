@@ -1,14 +1,15 @@
 /*
 * @Author: Irving
 * @Date:   2017-08-13 21:13:24
-* @Last Modified by:   Irving
-* @Last Modified time: 2017-08-14 13:30:34
+* @Last Modified by:   beyondouyuan
+* @Last Modified time: 2017-08-24 00:09:59
 */
 
 
 import React from 'react';
 
 import formProvider from '../../utils/formProvider';
+import request, { get } from '../../utils/request';
 import FormItem from '../FormItem/FormItem';
 import HomeLayout from '../Layouts/HomeLayout';
 
@@ -36,23 +37,14 @@ class PlayerEditor extends React.Component {
 			apiUrl += '/' + editTarget.id;
 			method = 'put';
 		}
-		fetch(apiUrl, {
-			method,
-			// fetch方法提交的json需要使用JSON.stringify方法转换为字符串
-			// 请求体
-			body:JSON.stringify({
-				name: name.value,
-				age: age.value,
-				team: team.value,
-				size: size.value
-			}),
-			// 请求头
-			headers: {
-				'Content-Type': 'application/json'
-			}
+		request(method, apiUrl, {
+			name: name.value,
+			age: age.value,
+			team: team.value,
+			size: size.value
 		})
 		// 回调函数
-		.then((res) => res.json())
+		// .then((res) => res.json())
 		.then((res) => {
 			// 当添加成功，返回的sjon对象中应包含一个有效的id字段
 			// 因而可以使用res.id来判断是否添加成功

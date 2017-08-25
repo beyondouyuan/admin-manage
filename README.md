@@ -1295,16 +1295,754 @@ PlayerAdd.js组件中引入FormItem组件，修改PlayerAdd组件：
 
 页面成功渲染，那么其他页面也可以做此调整重构。除了可以在每一个页面import HomeLayout组件外，也可以在路由中进行嵌套，则每一个需要使用到HomeLayoutde zujian都会在路由渲染时传入HomeLayout布局组件。
 
-#### 编译与删除
+#### 编辑与删除
 
 到现在为止，已完成读写操作，编辑与删除时针对已存在的数据进行的操作。修改PalyerList.js组件，增加编辑与删除按钮以及相对应的处理程序：
 
 
+修改PlayerList.js组件，在表格中新增操作列，随后添加删除编辑处理程序handleDelete和handleEdit。
+
+
+#### 删除
+
+先易后难，首先解决删除功能，在修改PlayerList组件中添加handleDelete方法：
+
+    handleDelete(player) {
+        // 确认对话框
+        const confirmed = confirm(`确定要删除球员 ${player.name} 吗？`);
+        if (confirmed) {
+                fetch('http://localhost:3000/players' + player.id, {
+                method: 'delete'
+            })
+            .then(res => res.json())
+            .then(res => {
+                    this.setState({
+                    PlayerList: this.state.PlayerList.filter(item => item.id !== player.id)
+                });
+                alert('删除球员成功！');
+            })
+            .catch(err => {
+                console.error(err);
+                alert('删除失败！')
+            });
+        }
+    }
+
+handleDelete和handleEdit方法将player对象作为参数传入，则这两个方法根据传入的player对象进行相应操作。
+
+
+#### 编辑
+
+一般地，编辑与添加基本上一致，不同的地方在于：
+
+- 球员编辑需要将球员数据先填充到表单
+- 球员编辑在提交时调用的接口和方法不同
+- 页面辩题不同
+- 页面路由不同
+
+这么看来，我们完全可以讲PlayerAdd.js组件复制一份到一个新的页面中去形成一个新的PlayerEdit.js页面，然后修改一下页面标题，在路由页面添加相应路由到该页面，并且修改提交时候的接口与方法即可。
+
+看上去是可行的，但是React的一大优势就是组件化，组件化的一大特点就是可复用性，倘若我们如此任性的酒新建一个几乎一致只有少许不同的地方的页面组件，那么我们何必再进行之前的组件话优化？甚至，我们何必选择React？
+
+and so!
+
+我们将会新增和编辑页面抽出来，将相同相似的部分抽成一个PlayerEditor.js组件。
+
+- 升级原来的formProvider组件，使其返回的表单组件支持数据填充(编辑页面表单填充数据)
+- 将PlayerAdd.js中大部分代码抽离到PlayerEditor.js中，通过传入不同的pros来控制组件的行为是增加还是编辑
+
+修改formProvider组件：
+
+
+    /*
+     * @Author: Irving
+     * @Date:   2017-08-12 17:01:43
+     * @Last Modified by:   Irving
+     * @Last Modified time: 2017-08-13 21:12:32
+     */
+
+    import React from 'react';
+
+    function formProvider(fields) {
+        /**
+         * [description]
+         * @param  {[type]} Component [description]
+         * @return {[type]}           [description]
+         */
+        return function(Component) {
+            const initFormState = {};
+            for (const key in fields) {
+                initFormState[key] = {
+                    value: fields[key].defaultValue,
+                    error: ''
+                };
+            }
+
+            class FormComponent extends React.Component {
+                // 在constructor中初始化数据以及绑定this
+                constructor(props) {
+                    super(props);
+                    this.state = {
+                        form: initFormState,
+                        formValid: false
+                    };
+                    // 绑定this
+                    this.handleChange = this.handleChange.bind(this);
+                    this.setFormData = this.setFormData.bind(this);
+                }
+                setFormData(values) {
+                    if (!values) {
+                        return;
+                    }
+                    const { form } = this.state;
+                    let newForm = {...form};
+                    for(const field in form) {
+                        if (form.hasOwnProperty(field)) {
+                            if (typeof values[field] !== 'undefined') {
+                                newForm[field] = {...newForm[field], value: values[field]};
+                            }
+                            newForm[field].valid = true;
+                        }
+                    }
+
+                    this.setState({
+                        form: newForm
+                    });
+                }
+                handleChange(fieldName, value, type= "string") {
+                    if (type === 'number') {
+                        value = +value;
+                    }
+                    const { form } = this.state;
+
+                    const newFieldState = { value, valid: true, error: '' };
+
+                    const fieldRules = fields[fieldName].rules;
+
+                    for (let i = 0; i < fieldRules.length; i++) {
+                        const { pattern, error } = fieldRules[i];
+                        let valid = false;
+                        if (typeof pattern === 'function') {
+                            valid = pattern(value);
+                        } else {
+                            valid = pattern.test(value);
+                        }
+
+                        if (!valid) {
+                            newFieldState.valid = false;
+                            newFieldState.error = error;
+                            break;
+                        }
+                    }
+
+                    const newForm = {...form, [fieldName]: newFieldState };
+                    // const formValid = Object.values(newForm).every(f => f.valid);
+                    // 遍历对象可枚举的属性
+                    // 低版本浏览器不支持Object.values方法
+                    const validArr = Object.keys(newForm).map((k) => newForm[k]);
+                    const formValid = validArr.every(f => f.valid);
+                    this.setState({
+                        form: newForm,
+                        formValid
+                    });
+                }
+                // 渲染存入的子组件
+                render() {
+                    const { form, formValid } = this.state;
+                    return <Component
+                        {...this.props }
+                        form = { form }
+                        formValid = { formValid }
+                        handleChange = { this.handleChange }
+                        setFormData = { this.setFormData }
+                    />
+                }
+            }
+            // 返回父级组件
+            return FormComponent;
+        }
+    }
+
+    export default formProvider;
+
+组件增加setFormData方法，用于填充表单数据。则在编辑球员数据时，即可在表单中读取原数据。
+
+将PlayerAdd组件中的表单抽离到PlayerEditor组件中，表单即为编辑新增的公用部分，如此可达到组件复用的目的。
+
+
+PlayerEditor.js:
+
+    /*
+    * @Author: Irving
+    * @Date:   2017-08-13 21:13:24
+    * @Last Modified by:   beyondouyuan
+    * @Last Modified time: 2017-08-23 10:33:53
+    */
+
+
+    import React from 'react';
+
+    import formProvider from '../../utils/formProvider';
+
+    import FormItem from '../FormItem/FormItem';
+    import HomeLayout from '../Layouts/HomeLayout';
+
+    class PlayerEditor extends React.Component {
+
+        componentWillMount () {
+            const {editTarget, setFormData} = this.props;
+            if (editTarget) {
+                setFormData(editTarget);
+            }
+        }
+
+        fetchData(url) {
+            // 通过解构获取数据
+            const {form: { name, age, team, size }, formValid, editTarget } = this.props;
+            if (!formValid) {
+                alert('请填写正确的信息后重试');
+                return;
+            }
+            let editType = "添加";
+            let apiUrl = url;
+            let method = 'post';
+            if (editTarget) {
+                editType = "编辑";
+                apiUrl += '/' + editTarget.id;
+                method = 'put';
+            }
+            fetch(apiUrl, {
+                method,
+                // fetch方法提交的json需要使用JSON.stringify方法转换为字符串
+                // 请求体
+                body:JSON.stringify({
+                    name: name.value,
+                    age: age.value,
+                    team: team.value,
+                    size: size.value
+                }),
+                // 请求头
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            // 回调函数
+            .then((res) => res.json())
+            .then((res) => {
+                // 当添加成功，返回的sjon对象中应包含一个有效的id字段
+                // 因而可以使用res.id来判断是否添加成功
+                if(res.id) {
+                    alert(editType + '球员成功！');
+                    this.context.router.push('/player/list');
+                } else {
+                    alert(editType + '失败');
+                }
+            })
+            // 捕捉错误
+            .catch((err) => {
+                console.error(err);
+            });
+        }
+        // 表单提交处理程序
+        handleSubmit(event) {
+            event.preventDefault();
+            this.fetchData('http://localhost:3000/players');
+        }
+        render() {
+            // 结构出所需要的值
+            const {form: { name, age, team, size }, handleChange} = this.props;
+            return (
+                <form onSubmit={(event) => this.handleSubmit(event)}>
+                    <FormItem label="球员名字：" valid={name.valid} error={name.error}>
+                        <input type="text" placeholder="请输入球员名字..." value={name.value} onChange={(event) => handleChange('name', event.target.value)} />
+                    </FormItem>
+                    <FormItem label="球员年龄：" valid={age.valid} error={age.error}>
+                        <input type="number" placeholder="请输入球员年龄..." value={age.value || ''} onChange={(event) => handleChange('age', event.target.value, 'number')} />
+                    </FormItem>
+                    <FormItem label="效力球队：" valid={team.valid} error={team.error}>
+                        <input type="text" placeholder="请输入效力球队..." value={team.value}  onChange={(event) => handleChange('team', event.target.value)} />
+                    </FormItem>
+                    <FormItem label="球员身高：" valid={size.valid} error={size.error}>
+                        <input type="number" placeholder="请输入球员身高..." value={size.value || ''} onChange={(event) => handleChange('size', event.target.value, 'number')} />
+                    </FormItem>
+                    <input type="submit" value="提交" />
+                </form>
+            );
+        }
+    }
+
+    // 必须给PlayerAdd义一个包含router属性的contextTypes
+    // 使得组件中可以通过this.context.router来使用React Router提供的方法
+    PlayerEditor.contextTypes = {
+      router: React.PropTypes.object.isRequired
+    };
+
+    PlayerEditor = formProvider({
+        name: {
+            defaultValue: '',
+            rules: [
+                {
+                    pattern: function(value) {
+                        return value.length > 0
+                    },
+                    error: '请输入球员名字'
+                },
+                {
+                    pattern: /^.{1,32}$/,
+                    error: '用户名最多32个字符'
+                }
+            ]
+        },
+        age: {
+            defaultValue: 0,
+            rules: [
+                {
+                    pattern: function (value) {
+                    return value >= 1 && value <= 100;
+                    },
+                    error: '请输入1~100的年龄'
+                }
+            ]
+        },
+        team: {
+            defaultValue: '',
+            rules: [
+                {
+                    pattern: function(value) {
+                        return value.length > 0
+                    },
+                    error: '请输入球队名字'
+                },
+                {
+                    pattern: /^.{1,32}$/,
+                    error: '球队名最多32个字符'
+                }
+            ]
+        },
+        size: {
+            defaultValue: 0,
+            rules: [
+                {
+                    pattern: function (value) {
+                    return value >= 100 && value <= 300;
+                    },
+                    error: '请输入100~300的身高'
+                }
+            ]
+        }
+    })(PlayerEditor);
+
+
+    export default PlayerEditor;
+
+PlayerEditor.js组件在组件挂载前，接收了来自父组件props对象传入的editTarget属性，用于填充数据（编辑时填充、新增操作则不填充），同时在fetchData方法中也根据父组件中传入的editTarget属性来分别处理新增或者编辑的提交处理程序即handleSubmit，新增或者编辑提交数据时的方法不一样，路经也不完全一致（新增为post方法，而编辑则为put方法）。抽离出PlayerEditpr组件后，修改PlayerAdd组件如下：
+
+    /*
+    * @Author: Irving
+    * @Date:   2017-08-11 18:30:44
+    * @Last Modified by:   Irving
+    * @Last Modified time: 2017-08-13 21:31:07
+    * @PlayerAdd.js
+    */
+
+    import React from 'react';
+
+    import HomeLayout from '../Layouts/HomeLayout';
+    import PlayerEditor from './PlayerEditor'
+
+    class PlayerAdd extends React.Component {
+        render() {
+            return (
+                <HomeLayout title="添加球员">
+                    <PlayerEditor />
+                </HomeLayout>
+            );
+        }
+    }
+    export default PlayerAdd;
+
+
+随后新增PlayerEditPage组件，作为编辑页面，同时在路由页面同样相应路由渲染此页面，PlayerEditPage如下：
+
+    /*
+    * @Author: Irving
+    * @Date:   2017-08-13 22:49:38
+    * @Last Modified by:   beyondouyuan
+    * @Last Modified time: 2017-08-23 10:46:53
+    * @PlayerEditPage
+    */
+
+    import React from 'react';
+    import HomeLayout from '../Layouts/HomeLayout';
+    import PlayerEditor from './PlayerEditor'
+
+    class PlayerEditPage extends React.Component {
+        /**
+         * [constructor description]
+         * @param  {[type]} props [description]
+         * @return {[type]}       [description]
+         */
+        constructor(props) {
+            super(props);
+            this.state = {
+                player: null
+            };
+        }
+        componentWillMount() {
+            const playerId = this.context.router.params.id;
+            fetch('http://localhost:3000/players/' + playerId)
+            .then(res => res.json())
+            .then(res => {
+                this.setState({
+                    player: res
+                });
+            });
+        }
+
+        render() {
+            const { player } = this.state;
+            return(
+                <HomeLayout title="编辑球员">
+                    {
+                        player ? <PlayerEditor editTarget={player} /> : '加载中'
+                    }
+                </HomeLayout>
+            )
+        }
+    }
+
+    PlayerEditPage.contextTypes = {
+        router: React.PropTypes.object.isRequired
+    };
+
+
+    export default PlayerEditPage;
+
+PlayerEditPage页面传入editTarget到PlayerEditor组件，用于控制判断为编辑操作。编辑页面在组件渲染前填充表单数据(官方更推荐是在组件挂载之后再执行fetch数据的操作)。
+
+到此，一切准备就绪，添加编辑处理程序，实际上，编辑操作不做数据的实际操作，只需在点击编辑按钮时，将页面路由跳转至编辑页面即可，随后在编辑页面中编辑数据，提交表单，ok！所以，编辑和新增几乎是一致的，只是做个路由跳转到编辑页面，在编辑页面加载时去fetch数据填充表单，然后提交表单，handleEdit如下:
+
+    handleEdit(player) {
+        /**
+         * 路由跳转到编辑页面即可
+         */
+        this.context.router.push('/player/edit/' + player.id);
+
+    }
+
+测试一下，点击编辑按钮，页面跳转：如图1
+
+![src/Components/FormItem/FormItem.js]()
 
 
 
+### 关联
+
+我们只是完成了一个简单的球员数据录入，然后，这也太单调了一些，一个球员本身不可能是一个单一的球员，总还有点相关性的--比如，荣誉。
+
+每一个球员都会去到各自的荣誉，我们在db.json中也有一个honor对象，它应当与球员一一对应。我们需要将两者关联起来。我们可以使用owner_id将两者关联起来（数据模型设计得并不是很好，一版来说，不应该是所属owner而应该是标签tag，他们是一对多的关系）。
+
+### 构建组件
+
+球员荣誉与球员信息的管理方式如出一辙，也就是说，他们的组件也是高度相似甚至是可以重用的，在此处，暂时不再乎组件重用，将Players目录下的组件复制一份到Honor目录下，随后修改对应的字段以及路由和url等参数即可。所有参数修改后，到相应路由可以看到我们想要的效果！
+
+这样就行了么？！以上提到过，一个球员除了基本信息，还要有相关信息，就如我们平时浏览新闻的时候可以看到新闻的归属活着类别标签，我们这里也有这么个关系，这些个荣誉活着新闻是属于哪一个球员呢？
+
+我们当然可以在输入荣誉的时候输入关联标签或者所属id，但是，这是一个一对多的关系，一个球员可能有多个标签，或者说，虽然只关联一个id，但是，这个id太长，不宜于输入，所以。。。怎么办？是的，没错，提供一个下拉列表！搞定！这是我们以往的做法，提供一个原生的下拉标签，提供选项。
+
+在React中，我们可以不必如此古板，我们只需要提供一个列表---不一定就是下拉列表selecte，我们完全可以用一个无序列表提供这样的功能，我们只需要再给这个无序列表的li添加相应的选择事件的监听处理程序即可。
+
+我们将这个下拉列表命名为AutoComplete组件，意为根据输入的id进行譬如id_linke这样的模糊搜索，也即是党我们输入一个id时，发起一个请求，请求路径为http://localhost:3000/player?id_like=xxx这样的类型，请求得到的数组渲染在这个模拟下拉列表中，即相当于实现模糊搜索亦或事自动完成的功能。
 
 
+
+将这个自动完成或者模拟搜索抽离成为一个组件，这个组件包括一个输入框用于用户输入，以及一个列表，用于渲染选择列表，选择列表的数据根据输入的值进行id_like模拟请求数据得到。
+
+
+### 组件划分
+
+通常的，当我们想写一个组件的时候，首先需要思考以下几个问题：
+
+- 组件的结构该是怎样的
+- 组件的逻辑是怎样的
+- 是否需要有内部状态，有内部状态则使用class组件，组件的状态由组件自身维护。无则使用函数组件或者纯组件。
+- 组件需要暴露那些接口给外界，即可通过props对象所暴露的属性有哪些
+
+
+综上，可以首先确定我们的组件是一个输入框和一个无序列表：
+
+    <div>
+        <input type="" name="" />
+        <ul>
+            <li></li>
+        </ul>
+    </div>
+
+思考我们组件的逻辑：
+
+- input未输入时，就是一个普通的输入框
+- input输入时，值改变，若根据输入的值可以模糊请求到数据，则将得到的数据渲染ul中
+- 无序列表监听键盘方向键，以及点击事件，鼠标以及键盘移动，相应li变为激活项，鼠标点击相应项，则input的值编委该项的值
+
+
+### 组件内部状态
+
+组件通过state对象来维护内部状态，通常使用setState方法来更新state对象。默认情况下，state改变组件树会重新调用render方法渲染组件，但是，我们可以在componentShouldUpdate周期控制返回值来控制是否重新渲染组件。
+
+### 组件实现
+
+AutoComplete.js组件如下：
+
+
+    /*
+    * @Author: beyondouyuan
+    * @Date:   2017-08-23 11:31:15
+    * @Last Modified by:   beyondouyuan
+    * @Last Modified time: 2017-08-23 15:06:52
+    */
+
+    import React from 'react';
+
+    import { PropTypes } from 'react';
+
+    import style from '../../styles/auto-complete.less'
+
+    function getItemValue(item) {
+        return item.value || item;
+    }
+
+    class AutoComplete extends React.Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+                displayValue: '',
+                activeIndex: -1
+            };
+            this.handleKeyDown = this.handleKeyDown.bind(this);
+            this.handleLeave = this.handleLeave.bind(this);
+        }
+        // 输入处理程序
+        handleChange(value) {
+            this.setState({
+                activeIndex: -1,
+                displayValue: ''
+            });
+            this.props.handleChange(value);
+        }
+        handleKeyDown(event) {
+            const { activeIndex } = this.state;
+            const { options } = this.props;
+
+            switch (event.keyCode) {
+                // 回撤
+                case 13: {
+                    if (activeIndex >= 0) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        this.handleChange(getItemValue(options[activeIndex]))
+                    }
+                    break;
+                }
+                // 上下方向
+                case 30:
+                case 40: {
+                    event.preventDefault();
+                    this.updateItem(event.code === '30' ? 'up' : 'down');
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+        handleEnter(index) {
+            const currentitem = this.props.options[index];
+            this.setState({
+                activeIndex: index,
+                displayValue: getItemValue(currentitem)
+            })
+        }
+        handleLeave() {
+            this.setState({
+                activeIndex: -1,
+                displayValue: ''
+            })
+        }
+        updateItem(direction) {
+            const { activeIndex } = this.state;
+            const { options } = this.props;
+            const lastIndex = options.length - 1;
+
+            let newIndex = -1;
+
+            // 根据键盘方向更新激活项索引
+            if(direction === 'up') {
+                // 若尚未选中，则默认选中最后一项，从下往上
+                if (activeIndex === -1) {
+                    newIndex = lastIndex;
+                } else {
+                    newIndex = activeIndex - 1;
+                }
+            } else {
+                if(activeIndex < lastIndex) {
+                    newIndex = activeIndex + 1;
+                }
+            }
+            // 跟新输入框的值
+            let newDisplayValue = '';
+            if (newIndex >= 0) {
+                newDisplayValue = getItemValue(options[newIndex]);
+            }
+            // 跟新状态
+            this.setState({
+                displayValue: newDisplayValue,
+                activeIndex: newIndex
+            });
+        }
+        render() {
+            const { displayValue, activeIndex } = this.state;
+            const { value, options } = this.props;
+
+            return(
+                <div className={style.wrapper}>
+                    <input
+                        value={displayValue || value}
+                        onChange={(event) => this.handleChange(event.target.value)}
+                        onKeyDown={this.handleKeyDown}
+                    />
+                    {
+                        options.length > 0 && (
+                            <ul
+                                className={style.options}
+                                onMouseLeave={this.onMouseLeave}
+                            >
+                                {
+                                    options.map((item, index) => {
+                                        return (
+                                            <li
+                                                key={index}
+                                                className={activeIndex === index ? style.active : ''}
+                                                onMouseEnter={() => this.handleEnter(index)}
+                                                onClick={() => this.handleChange(getItemValue(item))}
+                                                >
+                                                { item.text || item }
+                                            </li>
+                                        )
+                                    })
+                                }
+                            </ul>
+                        )
+                    }
+                </div>
+            );
+        }
+    }
+
+    // 组件检验
+
+    AutoComplete.propTypes = {
+        value: PropTypes.number.isRequired,
+        options: PropTypes.array.isRequired,
+        handleChange: PropTypes.func.isRequired
+    }
+
+
+
+    export default AutoComplete;
+
+### this绑定方式
+
+以上，在constructor构造函数中有两句与句：
+
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.handleLeave = this.handleLeave.bind(this);
+
+而在组件中还有诸如onClick事件的方法：
+
+    onClick={() => this.handleChange(getItemValue(item))}
+
+
+以上都出于相同的目的：绑定this。使用ES5语法书写的React组件会自动为我们将this指向到当前组件，而使用ES6语法书写的React组件则未自动为我们绑定this，所以我们需要手动绑定，使得this指向到当前组件，一版绑定由两种方式：
+
+- 在构造函数constructor的super()方法之后绑定this
+- 在组件内使用肩头函数，肩头函数本身并没有this，使用肩头函数即相当于自动的把this绑定到了当前组件对象
+- 当组件的方法比较多，而我们又不想都适用肩头函数时，在constructor中一个一个的绑定太过于麻烦，所以我们还可以写一个公用的方法来遍历绑定this
+
+
+HonorEditor.js组件输入owner_id的部分修改如下：
+
+    <FormItem label="荣誉所属：" valid={owner_id.valid} error={owner_id.error}>
+        <AutoComplete
+            value={owner_id.value ? owner_id.value : 0}
+            options={PlayerOptions}
+            handleChange={value => this.handlePlayerOwnerIdChange(value)}
+         />
+    </FormItem>
+
+
+表单其余部分不变。
+
+getPlayerOptions方法为实现模糊搜索请求数据，得到下拉列表的的渲染的数据。
+handlePlayerOwnerIdChange方法用于监听输入框，然后使用函数节流的方式去调用getPlayerOptions方法请求数据。
+
+    getPlayerOptions(playerId) {
+        fetch('http://localhost:3000/players?id_like' + playerId)
+            .then((res) => res.json())
+            .then((res) => {
+                if (res.length === 1 && res[0].id === players) {
+                    return;
+                }
+                this.setState({
+                    PlayerOptions: res.map(item => {
+                        return{
+                            text: `${item.id} (${item.name})`,
+                            value: item.id
+                        }
+                    })
+                })
+            })
+    }
+    timer = 0;
+    handlePlayerOwnerIdChange(value) {
+        this.props.handleChange('owner_id', value, 'number');
+        this.setState({
+            PlayerOptions: []
+        });
+        // 时间节流
+        if (this.timer) {
+            clearTimeout(this.timer);
+        }
+        if (value) {
+            // setTimeout使用肩头函数自动绑定this指向当前组件对象
+            this.timer = setTimeout(() => {
+                this.getPlayerOptions(value);
+                this.timer = 0;
+            }, 800)
+        }
+    }
+
+### 模块CSS
+
+自动完成输入的列表未加入任何样式，太过于丑陋，添加一个auto-complete.less的样式，在AutoComplete组件中引入，并为组件添加样式类名：
+
+    import style from '../../styles/auto-complete.less'
+
+    className={style.wrapper}
+
+在某个组件中引入样式表文件，而不是在程序应用的入口文件中引入样式表，则无需使用webpack的loader去加载文件，如此形成一个组件对应一个模块的样式表。
+
+
+以上，到当前为止，React的组件基础，以及React-Router的使用知识已经算是过了官方文档的大部分了，其实可以看出，使用React的核心或者说基本点在于以下几点：
+
+- 组件的拆分，在React中，可以说一切都是组件，一切都是由组件组成，也即可以说明，一切都可以被拆分为组件。
+- 是否需要将某部分拆分为组件？组件是否该继续细拆违更小的组件？组件的拆分是一门艺术！
+- 组件是否可以重用，如何重用？组件由两大特点：可维护性，可复用性。
+- 组件的逻辑：组件内部通过维护，组件对外接口由props对象提供。
+- 组件的生命周期，在哪个周期适合做哪些操作？ajax或者fetch数组请求官方更加推荐是在componentDidMouting周期内执行，而不是在componentWillMouting周期， componentWillMouting具有不确定性，服务器端的操作再次周期问题不大。componentDidMouting周期至少可以保证被调用一次。
+
+
+### 登陆验证
+
+到目前为止，我们的后台，来者不拒，所有知道我们后台连接的人都可以直接访问我们的后台，可以操作修改我们的数据。这怎么行呢？so!我们需要给我们的后台系统添加验证后开放权限，首先，你要有个女朋友！哈哈哈哈，首先，得要登陆才可以访问后台并操作数据，未登录？对不起，请离开。
 
 
 

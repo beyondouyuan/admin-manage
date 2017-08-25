@@ -1,11 +1,11 @@
 {
   "players": [
     {
-      "id": 10000,
       "name": "勒布朗·詹姆斯",
-      "age": 32,
+      "age": 33,
       "team": "骑士",
-      "size": 203
+      "size": 203,
+      "id": 10000
     },
     {
       "id": 10001,
@@ -57,124 +57,76 @@
       "size": 193
     },
     {
-      "name": "德里克·罗斯",
-      "age": 29,
-      "team": "骑士",
-      "size": 198,
-      "id": 10008
-    },
-    {
-      "name": "麦克·米勒",
-      "age": 36,
-      "team": "热火",
-      "size": 203,
-      "id": 10009
-    },
-    {
-      "name": "詹姆斯·琼斯",
-      "age": 37,
-      "team": "骑士",
-      "size": 203,
-      "id": 10010
-    },
-    {
-      "name": "林书豪",
-      "age": 29,
-      "team": "篮网",
-      "size": 198,
-      "id": 10011
-    },
-    {
-      "name": "文思·卡特",
-      "age": 40,
-      "team": "国王",
-      "size": 203,
-      "id": 10012
-    },
-    {
-      "name": "德隆·威廉姆斯",
-      "age": 35,
-      "team": "骑士",
-      "size": 201,
-      "id": 10013
-    },
-    {
-      "name": "克里斯·保罗",
-      "age": 33,
-      "team": "火箭",
-      "size": 183,
-      "id": 10014
-    },
-    {
-      "name": "泰勒·约翰逊",
-      "age": 26,
-      "team": "热火",
+      "name": "欧元",
+      "age": 18,
+      "team": "小妞",
       "size": 188,
-      "id": 10015
-    },
-    {
-      "name": "德克",
-      "age": 49,
-      "team": "小牛",
-      "size": 210,
-      "id": 10016
-    },
-    {
-      "name": "林书豪",
-      "age": 29,
-      "team": "篮网",
-      "size": 198,
-      "id": 10017
+      "id": 10008
     }
   ],
   "honor": [
     {
       "id": 10000,
-      "MVP": 4,
+      "mvp": 4,
       "champion": 3,
-      "salary": 3000
+      "salary": 3000,
+      "owner_id": 10000
     },
     {
       "id": 10001,
-      "MVP": 0,
+      "mvp": 0,
       "champion": 1,
-      "salary": 2000
+      "salary": 2000,
+      "owner_id": 10001
     },
     {
       "id": 10002,
-      "MVP": 0,
+      "mvp": 0,
       "champion": 3,
-      "salary": 2500
+      "salary": 2500,
+      "owner_id": 10002
     },
     {
       "id": 10003,
-      "MVP": 0,
+      "mvp": 0,
       "champion": 1,
-      "salary": 2000
+      "salary": 2000,
+      "owner_id": 10003
     },
     {
       "id": 10004,
-      "MVP": 1,
+      "mvp": 1,
       "champion": 1,
-      "salary": 3500
+      "salary": 3500,
+      "owner_id": 10004
     },
     {
       "id": 10005,
-      "MVP": 2,
+      "mvp": 2,
       "champion": 2,
-      "salary": 4000
+      "salary": 4000,
+      "owner_id": 10005
     },
     {
       "id": 10006,
-      "MVP": 0,
+      "mvp": 0,
       "champion": 0,
-      "salary": 3000
+      "salary": 3000,
+      "owner_id": 10006
     },
     {
       "id": 10007,
-      "MVP": 1,
+      "mvp": 1,
       "champion": 0,
-      "salary": 3000
+      "salary": 3000,
+      "owner_id": 10007
+    },
+    {
+      "mvp": 1,
+      "champion": 10,
+      "salary": 100,
+      "owner_id": 10005,
+      "id": 10008
     }
   ]
 }
