@@ -2,12 +2,12 @@
  * @Author: beyondouyuan
  * @Date:   2017-08-23 21:13:46
  * @Last Modified by:   beyondouyuan
- * @Last Modified time: 2017-08-25 12:43:25
+ * @Last Modified time: 2017-08-26 15:38:27
  */
 
 
-// 到期时间
-const expireTime = 1000 * 60;
+// 到期时间 ms
+const expireTime = 5000 * 60;
 
 module.exports = function(req, res, next) {
     // 登陆成功后的返回头中增加服务器已加密的token信息，以便在后续需要身份验证的接口请求中在请求头戴上这个token，发送到服务器进行判断请求是否合法

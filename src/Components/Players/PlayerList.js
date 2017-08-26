@@ -2,11 +2,11 @@
 * @Author: Irving
 * @Date:   2017-08-13 03:20:36
 * @Last Modified by:   beyondouyuan
-* @Last Modified time: 2017-08-24 00:20:21
+* @Last Modified time: 2017-08-27 00:12:39
 */
 
 import React from 'react';
-import HomeLayout from '../Layouts/HomeLayout';
+import { message, Table, Button, Popconfirm } from 'antd';
 import request, { get, del } from '../../utils/request'
 
 class PlayerList extends React.Component {
@@ -59,22 +59,18 @@ class PlayerList extends React.Component {
 	 * @return {[type]}        [description]
 	 */
 	handleDelete(player) {
-		// 确认对话框
-		const confirmed = confirm(`确定要删除球员 ${player.name} 吗？`);
-		if (confirmed) {
-			del('http://localhost:3000/players' + player.id)
+			del('http://localhost:3000/players/' + player.id)
 			// .then(res => res.json())
 			.then(res => {
 				this.setState({
 					PlayerList: this.state.PlayerList.filter(item => item.id !== player.id)
 				});
-				alert('删除球员成功！');
+				message.success('删除球员成功！');
 			})
 			.catch(err => {
 				console.error(err);
-				alert('删除失败！')
+				message.error('删除失败！')
 			});
-		}
 	}
 	/**
 	 * [handleEdit description]
@@ -92,43 +88,44 @@ class PlayerList extends React.Component {
 	render() {
 		// 解构赋值提取数据
 		const { PlayerList } = this.state;
-		// 使用map方法将球员信息数据遍历并渲染到表格中
+		// 表头
+		const columns = [
+			{
+				title: '球员ID',
+				dataIndex: 'id'
+			},
+			{
+				title: '球员名字',
+				dataIndex: 'name'
+			},
+			{
+				title: '球员年龄',
+				dataIndex: 'age'
+			},
+			{
+				title: '效力球队',
+				dataIndex: 'team'
+			},
+			{
+				title: '球员身高',
+				dataIndex: 'size'
+			},
+			{
+				title: '操作',
+				render: (text, record) => (
+					<Button.Group type="ghost">
+						<Button type="primary" size="large" onClick={() => this.handleEdit(record)}>编辑</Button>
+						<Popconfirm title="确定要删除吗？" onConfirm={() => this.handleDelete(record)}>
+              				<Button type="danger" size="large">删除</Button>
+            			</Popconfirm>
+					</Button.Group>
+				)
+			}
+		]
 		return (
-			<HomeLayout title="球员信息列表">
-				<table>
-					<thead>
-						<tr>
-							<th>球员ID</th>
-							<th>球员名字</th>
-							<th>球员年龄</th>
-							<th>效力球队</th>
-							<th>球员身高</th>
-							<th>操作</th>
-						</tr>
-					</thead>
-					<tbody>
-						{/*jsx中的JavaScript表单时使用花括号括住*/}
-						{
-							PlayerList.map((player) => {
-								return(
-									<tr key={player.id}>
-										<td>{player.id}</td>
-										<td>{player.name}</td>
-										<td>{player.age}</td>
-										<td>{player.team}</td>
-										<td>{player.size}</td>
-										<td>
-											<a href="javascript:;" onClick={() => this.handleEdit(player)}>编辑</a>
-											<span>|</span>
-											<a href="javascript:;" onClick={() => this.handleDelete(player)}>删除</a>
-										</td>
-									</tr>
-								)
-							})
-						}
-					</tbody>
-				</table>
-			</HomeLayout>
+			<div style={{padding: '16px'}}>
+				<Table columns={columns} dataSource={PlayerList} rowKey={row => row.id}/>
+			</div>
 		)
 	}
 }

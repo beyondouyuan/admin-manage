@@ -2,11 +2,13 @@
 * @Author: beyondouyuan
 * @Date:   2017-08-23 12:03:24
 * @Last Modified by:   beyondouyuan
-* @Last Modified time: 2017-08-23 13:28:50
+* @Last Modified time: 2017-08-27 00:14:10
 */
 
 import React from 'react';
-import HomeLayout from '../Layouts/HomeLayout';
+import { message, Table, Button, Popconfirm } from 'antd';
+import request, { get, del } from '../../utils/request'
+
 
 class HonorList extends React.Component {
     /**
@@ -27,7 +29,14 @@ class HonorList extends React.Component {
          * @param  {[type]} res [description]
          * @return {[type]}     [description]
          */
-        this.fetchData('http://localhost:3000/honor');
+        get('http://localhost:3000/honor')
+            .then((res) => {
+                if (res) {
+                    this.setState({
+                        HonorList: res
+                    })
+                }
+            });
     }
     /**
      * [fetchData description]
@@ -54,19 +63,18 @@ class HonorList extends React.Component {
         // 确认对话框
         const confirmed = confirm(`确定要删除荣誉 ${honor.id} 吗？`);
         if (confirmed) {
-            fetch('http://localhost:3000/honor/' + honor.id, {
+            del('http://localhost:3000/honor/' + honor.id, {
                 method: 'delete'
             })
-            .then(res => res.json())
             .then(res => {
                 this.setState({
                     HonorList: this.state.HonorList.filter(item => item.id !== honor.id)
                 });
-                alert('删除成功！');
+                message.success('删除成功！');
             })
             .catch(err => {
                 console.error(err);
-                alert('删除失败！')
+                message.error('删除失败！')
             });
         }
     }
@@ -86,43 +94,44 @@ class HonorList extends React.Component {
     render() {
         // 解构赋值提取数据
         const { HonorList } = this.state;
-        // 使用map方法将球员信息数据遍历并渲染到表格中
+        // 表头
+        const columns = [
+            {
+                title: '荣誉ID',
+                dataIndex: 'id'
+            },
+            {
+                title: 'MVP',
+                dataIndex: 'mvp'
+            },
+            {
+                title: '冠军',
+                dataIndex: 'champion'
+            },
+            {
+                title: '薪水',
+                dataIndex: 'salary'
+            },
+            {
+                title: '标签',
+                dataIndex: 'owner_id'
+            },
+            {
+                title: '操作',
+                render: (text, record) => (
+                    <Button.Group type="ghost">
+                        <Button size="small" onClick={() => this.handleEdit(record)}>编辑</Button>
+                        <Popconfirm title="确定要删除吗？" onConfirm={() => this.handleDelete(record)}>
+                            <Button size="small">删除</Button>
+                        </Popconfirm>
+                    </Button.Group>
+                )
+            }
+        ]
         return (
-            <HomeLayout title="球员信息列表">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>荣誉ID</th>
-                            <th>mvp</th>
-                            <th>冠军</th>
-                            <th>薪水</th>
-                            <th>标签</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {/*jsx中的JavaScript表单时使用花括号括住*/}
-                        {
-                            HonorList.map((honor) => {
-                                return(
-                                    <tr key={honor.id}>
-                                        <td>{honor.id}</td>
-                                        <td>{honor.mvp}</td>
-                                        <td>{honor.champion}</td>
-                                        <td>{honor.salary}</td>
-                                        <td>{honor.owner_id}</td>
-                                        <td>
-                                            <a href="javascript:;" onClick={() => this.handleEdit(honor)}>编辑</a>
-                                            <span>|</span>
-                                            <a href="javascript:;" onClick={() => this.handleDelete(honor)}>删除</a>
-                                        </td>
-                                    </tr>
-                                )
-                            })
-                        }
-                    </tbody>
-                </table>
-            </HomeLayout>
+            <div style={{padding: '16px'}}>
+                <Table columns={columns} dataSource={HonorList} rowKey={row => row.id}/>
+            </div>
         )
     }
 }

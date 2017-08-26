@@ -2,13 +2,13 @@
 * @Author: beyondouyuan
 * @Date:   2017-08-23 12:03:06
 * @Last Modified by:   beyondouyuan
-* @Last Modified time: 2017-08-23 12:06:33
+* @Last Modified time: 2017-08-25 19:58:22
 */
 
 
 import React from 'react';
-import HomeLayout from '../Layouts/HomeLayout';
 import HonorEditor from './HonorEditor'
+import { get } from '../../utils/request'
 
 class HonorEditPage extends React.Component {
     /**
@@ -22,25 +22,24 @@ class HonorEditPage extends React.Component {
             honor: null
         };
     }
-    componentWillMount() {
+    componentDidMount() {
         const honorId = this.context.router.params.id;
-        fetch('http://localhost:3000/honor/' + honorId)
-        .then(res => res.json())
-        .then(res => {
-            this.setState({
-                honor: res
+        get('http://localhost:3000/honor/' + honorId)
+            .then(res => {
+                this.setState({
+                    honor: res
+                });
             });
-        });
     }
 
     render() {
         const { honor } = this.state;
         return(
-            <HomeLayout title="编辑荣誉">
+            <div>
                 {
                     honor ? <HonorEditor editTarget={honor} /> : '加载中'
                 }
-            </HomeLayout>
+            </div>
         )
     }
 }

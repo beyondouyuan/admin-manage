@@ -1,0 +1,65 @@
+@charset "UTF-8";
+/**
+ * home-layout.less
+ * @authors beyondouyuan (beyondouyuan@gmail.com)
+ * @date    2017-08-25 14:33:47
+ * @version $Id$
+ */
+
+// 左侧固定，右侧自适应哦！
+.main {
+    height: 100vh;
+    padding-top: 50px;
+}
+
+.header {
+    width: 100%;
+    height: 50px;
+    line-height: 50px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-size: 18px;
+    padding: 0 20px;
+    color: white;
+    background-color: rgba(0, 0, 0, .84);
+}
+
+
+.menu {
+    width: 240px;
+    height: 100%;
+    float: left;
+    background-color: #404040;
+}
+
+.content {
+    height: 100%;
+    // padding: 12px;
+    overflow: auto;
+    margin-left: 240px;
+}
+
+.navigation {
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    > div {
+        color: inherit;
+        > a {
+            color: inherit;
+        }
+    }
+    > .info {
+        display: flex;
+        > .span {
+            padding: 0 10px;
+        }
+    }
+}
+
+
+
+
+
+

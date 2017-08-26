@@ -1,8 +1,8 @@
 /*
 * @Author: Irving
 * @Date:   2017-08-11 18:30:44
-* @Last Modified by:   Irving
-* @Last Modified time: 2017-08-13 21:31:07
+* @Last Modified by:   beyondouyuan
+* @Last Modified time: 2017-08-25 15:30:35
 * @PlayerAdd.js
 */
 
@@ -14,9 +14,7 @@ import PlayerEditor from './PlayerEditor'
 class PlayerAdd extends React.Component {
 	render() {
 		return (
-			<HomeLayout title="添加球员">
-				<PlayerEditor />
-			</HomeLayout>
+			<PlayerEditor />
 		);
 	}
 }

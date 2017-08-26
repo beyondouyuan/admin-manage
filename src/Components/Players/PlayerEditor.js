@@ -2,90 +2,149 @@
 * @Author: Irving
 * @Date:   2017-08-13 21:13:24
 * @Last Modified by:   beyondouyuan
-* @Last Modified time: 2017-08-24 00:09:59
+* @Last Modified time: 2017-08-27 00:13:09
 */
 
 
 import React from 'react';
-
-import formProvider from '../../utils/formProvider';
+import { Form, Input, Button, InputNumber, message } from 'antd';
 import request, { get } from '../../utils/request';
-import FormItem from '../FormItem/FormItem';
-import HomeLayout from '../Layouts/HomeLayout';
+
+const FormItem = Form.Item;
+
+const FormLayout = {
+    labelCol: {
+        span: 4
+    },
+    wrapperCol: {
+        span: 16
+    }
+};
 
 class PlayerEditor extends React.Component {
 
-	componentWillMount () {
-    	const {editTarget, setFormData} = this.props;
-    	if (editTarget) {
-      		setFormData(editTarget);
-    	}
-  	}
+    componentDidMount() {
+        const { editTarget, form } = this.props;
+        if (editTarget) {
+            form.setFieldsValue(editTarget);
+        }
+    }
 
-	fetchData(url) {
-		// 通过解构获取数据
-		const {form: { name, age, team, size }, formValid, editTarget } = this.props;
-		if (!formValid) {
-      		alert('请填写正确的信息后重试');
-      		return;
-    	}
-    	let editType = "添加";
-		let apiUrl = url;
-		let method = 'post';
-		if (editTarget) {
-			editType = "编辑";
-			apiUrl += '/' + editTarget.id;
-			method = 'put';
-		}
-		request(method, apiUrl, {
-			name: name.value,
-			age: age.value,
-			team: team.value,
-			size: size.value
-		})
-		// 回调函数
-		// .then((res) => res.json())
-		.then((res) => {
-			// 当添加成功，返回的sjon对象中应包含一个有效的id字段
-			// 因而可以使用res.id来判断是否添加成功
-			if(res.id) {
-				alert(editType + '球员成功！');
-				this.context.router.push('/player/list');
-			} else {
-				alert(editType + '失败');
-			}
-		})
-		// 捕捉错误
-		.catch((err) => {
-			console.error(err);
-		});
-	}
-	// 表单提交处理程序
-	handleSubmit(event) {
-		event.preventDefault();
-		this.fetchData('http://localhost:3000/players');
-	}
-	render() {
-		// 结构出所需要的值
-		const {form: { name, age, team, size }, handleChange} = this.props;
-		return (
-			<form onSubmit={(event) => this.handleSubmit(event)}>
-				<FormItem label="球员名字：" valid={name.valid} error={name.error}>
-					<input type="text" placeholder="请输入球员名字..." value={name.value} onChange={(event) => handleChange('name', event.target.value)} />
-				</FormItem>
-				<FormItem label="球员年龄：" valid={age.valid} error={age.error}>
-					<input type="number" placeholder="请输入球员年龄..." value={age.value || ''} onChange={(event) => handleChange('age', event.target.value, 'number')} />
-				</FormItem>
-				<FormItem label="效力球队：" valid={team.valid} error={team.error}>
-					<input type="text" placeholder="请输入效力球队..." value={team.value}  onChange={(event) => handleChange('team', event.target.value)} />
-				</FormItem>
-				<FormItem label="球员身高：" valid={size.valid} error={size.error}>
-					<input type="number" placeholder="请输入球员身高..." value={size.value || ''} onChange={(event) => handleChange('size', event.target.value, 'number')} />
-				</FormItem>
-				<input type="submit" value="提交" />
-			</form>
-		);
-	}
+    // 表单提交处理程序
+    handleSubmit(event) {
+        event.preventDefault();
+        const { form, editTarget } = this.props;
+        form.validateFields((err, values) => {
+            if (!err) {
+                let editType = "添加";
+                let apiUrl = 'http://localhost:3000/players';
+                let method = 'post';
+                if (editTarget) {
+                    editType = "编辑";
+                    apiUrl += '/' + editTarget.id;
+                    method = 'put';
+                }
+                request(method, apiUrl, values)
+                    .then((res) => {
+                        if(res.id) {
+                            message.success(editType + '球员成功！');
+                            this.context.router.push('/player/list');
+                        } else {
+                            message.error(editType + '失败');
+                        }
+                    })
+                    .catch((err) => {
+                        message.error(err);
+                    });
+            } else {
+                message.warn(err);
+            }
+        });
+    }
+    render() {
+        // 结构出所需要的值
+        const { form } = this.props;
+        const { getFieldDecorator } = form;
+        return (
+            <div style={{width: '600px', padding: '16px'}}>
+                <Form onSubmit={(event) => this.handleSubmit(event)}>
+                    <FormItem label="球员名字：" {...FormLayout}>
+                        {getFieldDecorator('name', {
+                            rules: [
+                                {
+                                    required: true,
+                                    message: '请输入球员名字'
+                                },
+                                {
+                                    pattern: /^.{1,32}$/,
+                                    message: '名字最多32位'
+                                }
+                            ]
+                        })(
+                            <Input type="text" />
+                        )}
+                    </FormItem>
+                    <FormItem label="球员年龄：" {...FormLayout}>
+                        {getFieldDecorator('age', {
+                            rules: [
+                                {
+                                    required: true,
+                                    message: '请输入球员年龄',
+                                    type: 'number'
+                                },
+                                {
+                                    min: 19,
+                                    max: 50,
+                                    message: '请输入合法年龄',
+                                    type: 'number'
+                                }
+                            ]
+                        })(
+                            <InputNumber style={{width: '100%'}} />
+                        )}
+                    </FormItem>
+                    <FormItem label="效力球队：" {...FormLayout}>
+                        {getFieldDecorator('team', {
+                            rules: [
+                                {
+                                    required: true,
+                                    message: '请输入效力青队'
+                                },
+                                {
+                                    pattern: /^.{1,32}$/,
+                                    message: '名字最多32位'
+                                }
+                            ]
+                        })(
+                            <Input type="text" />
+                        )}
+                    </FormItem>
+                    <FormItem label="球员身高：" {...FormLayout}>
+                        {getFieldDecorator('size', {
+                            rules: [
+                                {
+                                    required: true,
+                                    message: '请输入球员年龄',
+                                    type: 'number'
+                                },
+                                {
+                                    min: 150,
+                                    max: 300,
+                                    message: '请输入合法身高',
+                                    type: 'number'
+                                }
+                            ]
+                        })(
+                            <InputNumber style={{width: '100%'}} />
+                        )}
+                    </FormItem>
+                    <FormItem wrapperCol={{...FormLayout.wrapperCol, offset: FormLayout.labelCol.span}}>
+                        <Button type="primary" htmlType="submit">提交</Button>
+                    </FormItem>
+                </Form>
+            </div>
+        );
+    }
 }
 
 // 必须给PlayerAdd义一个包含router属性的contextTypes
@@ -94,61 +153,7 @@ PlayerEditor.contextTypes = {
   router: React.PropTypes.object.isRequired
 };
 
-PlayerEditor = formProvider({
-	name: {
-		defaultValue: '',
-		rules: [
-			{
-				pattern: function(value) {
-					return value.length > 0
-				},
-				error: '请输入球员名字'
-			},
-			{
-        		pattern: /^.{1,32}$/,
-        		error: '用户名最多32个字符'
-      		}
-		]
-	},
-	age: {
-		defaultValue: 0,
-		rules: [
-			{
-        		pattern: function (value) {
-          		return value >= 1 && value <= 100;
-        		},
-        		error: '请输入1~100的年龄'
-      		}
-		]
-	},
-	team: {
-		defaultValue: '',
-		rules: [
-			{
-				pattern: function(value) {
-					return value.length > 0
-				},
-				error: '请输入球队名字'
-			},
-			{
-        		pattern: /^.{1,32}$/,
-        		error: '球队名最多32个字符'
-      		}
-		]
-	},
-	size: {
-		defaultValue: 0,
-		rules: [
-			{
-        		pattern: function (value) {
-          		return value >= 100 && value <= 300;
-        		},
-        		error: '请输入100~300的身高'
-      		}
-		]
-	}
-})(PlayerEditor);
-
+PlayerEditor = Form.create()(PlayerEditor)
 
 export default PlayerEditor;
 

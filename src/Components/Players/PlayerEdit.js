@@ -2,12 +2,11 @@
 * @Author: Irving
 * @Date:   2017-08-13 22:49:38
 * @Last Modified by:   beyondouyuan
-* @Last Modified time: 2017-08-24 00:03:20
+* @Last Modified time: 2017-08-25 19:00:56
 * @PlayerEditPage
 */
 
 import React from 'react';
-import HomeLayout from '../Layouts/HomeLayout';
 import PlayerEditor from './PlayerEditor';
 import { get } from '../../utils/request'
 
@@ -37,11 +36,11 @@ class PlayerEditPage extends React.Component {
 	render() {
 		const { player } = this.state;
 		return(
-			<HomeLayout title="编辑球员">
+			<div>
 				{
 					player ? <PlayerEditor editTarget={player} /> : '加载中'
 				}
-			</HomeLayout>
+			</div>
 		)
 	}
 }
